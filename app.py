@@ -18,5 +18,5 @@ def ask():
     conversationID = request.args.get('conversationID', datetime.now().strftime("%Y%m%d%H%M%S"))
     answer = chat_open_ai_conversation(query, conversationID, docs)
     return answer
-    """ return f"Hello, I'll help you with your query \"{query}\". This is your conversationID {conversationID}, in case you want to continue.\n Answer: \"{answer}\"" """
+
 

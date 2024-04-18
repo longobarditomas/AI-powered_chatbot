@@ -73,7 +73,5 @@ def db_search(filepath='', query=''):
         
     result = query_index(query, 2)
 
-    delete_index()
-
     return result
 
