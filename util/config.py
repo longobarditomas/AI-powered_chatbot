@@ -8,3 +8,5 @@ os.chdir( base_dir )
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 PERSIST_DIR    = base_dir+'/db/'
+
+ELASTICSEARCH_URL = "http://localhost:9200"

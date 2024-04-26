@@ -1,3 +1,4 @@
+from util.config import ELASTICSEARCH_URL
 from elasticsearch import Elasticsearch
 from langchain_elasticsearch import ElasticsearchStore
 from langchain_openai import OpenAIEmbeddings
@@ -5,7 +6,7 @@ from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import CharacterTextSplitter
 
 # Constants
-ES_URL     = "http://localhost:9200"
+ES_URL     = ELASTICSEARCH_URL
 INDEX_NAME = "test-basic"
 
 # Global Elasticsearch client
