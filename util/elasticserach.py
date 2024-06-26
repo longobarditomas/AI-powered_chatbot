@@ -1,4 +1,4 @@
-from util.config import ELASTICSEARCH_URL
+from util.config import ELASTICSEARCH_URL, ELASTICSEARCH_INDEX_NAME
 from elasticsearch import Elasticsearch
 from langchain_elasticsearch import ElasticsearchStore
 from langchain_openai import OpenAIEmbeddings
@@ -7,7 +7,7 @@ from langchain_text_splitters import CharacterTextSplitter
 
 # Constants
 ES_URL     = ELASTICSEARCH_URL
-INDEX_NAME = "test-basic"
+INDEX_NAME = ELASTICSEARCH_INDEX_NAME
 
 # Global Elasticsearch client
 es_client = Elasticsearch(ES_URL)
@@ -60,7 +60,7 @@ def delete_index():
         embedding=embeddings,
     )
     db.client.indices.delete(
-        index="test-basic",
+        index=INDEX_NAME,
         ignore_unavailable=True,
         allow_no_indices=True,
     )
@@ -69,7 +69,7 @@ def delete_index():
 
 
 def db_search(filepath='', query=''):
-    if (not es_client.indices.exists(index="test-basic")):
+    if (not es_client.indices.exists(index=INDEX_NAME)):
         setup_index(filepath)
         
     result = query_index(query, 2)
