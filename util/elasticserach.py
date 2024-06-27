@@ -1,3 +1,5 @@
+import os
+
 from util.config import ELASTICSEARCH_URL, ELASTICSEARCH_INDEX_NAME
 from elasticsearch import Elasticsearch
 from langchain_elasticsearch import ElasticsearchStore
@@ -12,8 +14,13 @@ INDEX_NAME = ELASTICSEARCH_INDEX_NAME
 # Global Elasticsearch client
 es_client = Elasticsearch(ES_URL)
 
-def setup_index(filepath):
+def setup_index():
     if not es_client.indices.exists(index=INDEX_NAME):
+        current_dir  = os.path.dirname(os.path.abspath(__file__))
+        base_dir     = os.path.dirname(current_dir)
+        filename     = 'state_of_the_union.txt'
+        filepath     = os.path.join( base_dir+'/data', filename)
+
         loader        = TextLoader(filepath)
         documents     = loader.load()
         text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=0)
@@ -68,9 +75,9 @@ def delete_index():
     return True
 
 
-def db_search(filepath='', query=''):
+def db_search(query=''):
     if (not es_client.indices.exists(index=INDEX_NAME)):
-        setup_index(filepath)
+        setup_index()
         
     result = query_index(query, 2)
 
