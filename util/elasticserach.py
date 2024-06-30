@@ -8,8 +8,9 @@ from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import CharacterTextSplitter
 
 # Constants
-ES_URL     = ELASTICSEARCH_URL
-INDEX_NAME = ELASTICSEARCH_INDEX_NAME
+ES_URL        = ELASTICSEARCH_URL
+INDEX_NAME    = ELASTICSEARCH_INDEX_NAME
+DOCS_FILENAME = "state_of_the_union.txt"
 
 # Global Elasticsearch client
 es_client = Elasticsearch(ES_URL)
@@ -18,7 +19,7 @@ def setup_index():
     if not es_client.indices.exists(index=INDEX_NAME):
         current_dir  = os.path.dirname(os.path.abspath(__file__))
         base_dir     = os.path.dirname(current_dir)
-        filename     = 'state_of_the_union.txt'
+        filename     = DOCS_FILENAME
         filepath     = os.path.join( base_dir+'/data', filename)
 
         loader        = TextLoader(filepath)
@@ -80,6 +81,5 @@ def db_search(query=''):
         setup_index()
         
     result = query_index(query, 2)
-
     return result
 

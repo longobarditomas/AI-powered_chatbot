@@ -9,11 +9,9 @@ app = Flask(__name__)
 
 @app.route("/ask")
 def ask():
-    query     = request.args.get('query', '')
-    docs      = db_search(query)
+    query = request.args.get('query', '')
+    docs  = db_search(query)
     
     conversationID = request.args.get('conversationID', datetime.now().strftime("%Y%m%d%H%M%S"))
     answer = chat_open_ai_conversation(query, conversationID, docs)
     return answer
-
-
