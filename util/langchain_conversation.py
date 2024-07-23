@@ -1,80 +1,77 @@
 import os
 import json
-import openai
 
 from pathlib import Path
 
 from util.config import OPENAI_API_KEY, PERSIST_DIR
 
 from langchain_openai import ChatOpenAI
-from langchain.prompts import (
-    ChatPromptTemplate,
-    MessagesPlaceholder,
-    SystemMessagePromptTemplate,
-    HumanMessagePromptTemplate
-)
-from langchain.chains import ConversationChain
-from langchain.memory import ConversationBufferMemory, ChatMessageHistory
-from langchain.schema import messages_to_dict, messages_from_dict
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.chat_history import InMemoryChatMessageHistory, BaseChatMessageHistory
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage
+
 
 def chat_open_ai_conversation(query='', conversationID=0, doc=''):
-    if conversationID and exists_conversation(conversationID):
-        loaded_messages = read_conversation(conversationID)
-        loaded_messages = loaded_messages[-4:]
-        history = ChatMessageHistory(messages=messages_from_dict(loaded_messages))
-        memory  = ConversationBufferMemory(chat_memory=history, return_messages=True)
-        memory.buffer
+    if conversationID and exists_session(conversationID):
+        loaded_messages = read_session(conversationID, "sessions")
     else:
-        memory = ConversationBufferMemory(return_messages=True)
-    return get_chat_open_ai_answer(query, conversationID, doc, memory)
+        loaded_messages = []
+    return get_chat_open_ai_answer(query, conversationID, doc, loaded_messages)
 
+def get_chat_open_ai_answer(question='', conversationID=0, doc='', store={}):
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are a friendly and polite assistant. Always respond in a kind and respectful manner."),
+            ("placeholder", "{chat_history}"),
+            ("human", "{input}"),
+        ]
+    )
 
-def get_chat_open_ai_answer(question='', conversationID=0, doc='', memory=None):
-    if memory is None:
-        memory = []
+    chain = prompt | ChatOpenAI(model="gpt-4o")
     
-    try: 
-        prompt = ChatPromptTemplate.from_messages([
-            SystemMessagePromptTemplate.from_template(doc),
-            MessagesPlaceholder(variable_name="history"),
-            HumanMessagePromptTemplate.from_template("{input}")
-        ])
-        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
-        conversation = ConversationChain(memory=memory, prompt=prompt, llm=llm, verbose=True)
-        conversation.predict(input=question)
-        messages = messages_to_dict(conversation.memory.chat_memory.messages)
-        store_conversation(conversationID, messages)
-        return create_json_data(conversationID, messages)
+    session_history = read_session(conversationID, "sessions")
 
-    except openai.RateLimitError as e:
-        return f"API call failed after retries: {str(e)}"
+    def get_session_history(session_id: str) -> BaseChatMessageHistory:
+        return InMemoryChatMessageHistory(messages=session_history)
 
+    wrapped_chain = RunnableWithMessageHistory(chain, get_session_history)
 
-def store_conversation(conversationID=0, messages=[]):
-    if int(conversationID) == 0:
-        return False
-    
-    folder_path = 'conversations/'
-    file_name   = conversationID+'.json'
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-        os.chmod(folder_path, 0o774)
-    file_path = os.path.join(folder_path, file_name)
-    with Path(file_path).open("w") as f:
-        json.dump(messages, f, indent=4)
-    os.chmod(file_path, 0o774)
-    return conversationID
+    config = {"configurable": {"session_id": conversationID}}
+
+    result = wrapped_chain.invoke(
+        [HumanMessage(content=question)],
+        config,
+    )
+
+    store_session(conversationID, session_history + [HumanMessage(content=question), AIMessage(content=result.content)], "sessions")
+
+    return create_json_data(conversationID, result.content)
 
 
-def read_conversation(conversationID=0):
-    file_path = 'conversations/'+conversationID+'.json'
-    with Path(file_path).open("r") as f:
-        loaded_messages = json.load(f)
-    return loaded_messages
+def store_session(session_id, messages, folder='sessions'):
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+        os.chmod(folder, 0o774)
+    filepath = os.path.join(folder, f'{session_id}.json')
+    with open(filepath, 'w') as file:
+        json.dump([message.dict() for message in messages], file)
+    os.chmod(filepath, 0o774)
 
 
-def exists_conversation(conversationID=0):
-    file_path = 'conversations/'+conversationID+'.json'
+def read_session(session_id, folder='sessions'):
+    filepath = os.path.join(folder, f'{session_id}.json')
+    if os.path.exists(filepath):
+        with open(filepath, 'r') as file:
+            messages = json.load(file)
+            return [HumanMessage(**msg) if msg['type'] == 'human' else AIMessage(**msg) for msg in messages]
+    else:
+        return []
+
+
+def exists_session(conversationID=0):
+    file_path = 'sessions/'+conversationID+'.json'
     return Path(file_path).exists()
 
 
