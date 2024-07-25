@@ -3,6 +3,7 @@ from flask import Flask, request
 from datetime import datetime
 
 from util.langchain_conversation import chat_open_ai_conversation
+from util.openai_assistant import get_assistant_conversation
 from util.elasticserach import db_search
 
 app = Flask(__name__)
@@ -15,3 +16,10 @@ def ask():
     conversationID = request.args.get('conversationID', datetime.now().strftime("%Y%m%d%H%M%S"))
     answer = chat_open_ai_conversation(query, conversationID, docs)
     return answer
+
+
+@app.route("/assistant")
+def assistant():
+    query = request.args.get('query', '')
+    assistant_conversation = get_assistant_conversation(query)
+    return assistant_conversation
