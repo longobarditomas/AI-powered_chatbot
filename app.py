@@ -20,6 +20,9 @@ def ask():
 
 @app.route("/assistant")
 def assistant():
-    query = request.args.get('query', '')
-    assistant_conversation = get_assistant_conversation(query)
+    query        = request.args.get('query', '')
+    instructions = "Answer as if you were a co-worker."
+    #filepath     = "data/test.csv"
+    filepath     = ""
+    assistant_conversation = get_assistant_conversation(query, instructions, filepath)
     return assistant_conversation
