@@ -1,3 +1,4 @@
+import os
 import time
 import json
 from openai import OpenAI
@@ -108,8 +109,20 @@ def get_thread_assistant_answer(thread_id=""):
     )
     for message in messages.data:
         if message.role == "assistant":
+            if message.content[0].text.annotations[0].file_path.file_id:
+                file_id = message.content[0].text.annotations[0].file_path.file_id
+                file_extension = os.path.splitext(message.content[0].text.annotations[0].text)[1]
+                download_asistant_generated_file(file_id, file_extension)
             return message.content[0].text.value
     return ""
+
+
+def download_asistant_generated_file(file_id, file_extension):
+    image_data = client.files.content(file_id)
+    image_data_bytes = image_data.read()
+
+    with open(f"./assistant_data/{file_id}{file_extension}", "wb") as file:
+        file.write(image_data_bytes)
 
 
 def create_json_data(answer=""):
