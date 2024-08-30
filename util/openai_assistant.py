@@ -7,18 +7,20 @@ from util.config import OPENAI_API_KEY, PERSIST_DIR
 client = OpenAI()
 
 
-def get_assistant_conversation(query="", instructions="", filepath=""):    
+def get_assistant_conversation(query="", assistant_id="", instructions="", filepath=""):
+    file_id = ""
     if filepath:
         file      = upload_assistant_file(filepath)
-        assistant = create_assistant(instructions, file.id)
-        thread    = create_thread(query, file.id)
-    else:
-        assistant = create_assistant(instructions)
-        thread    = create_thread(query)
-    run  = create_thread_run(thread.id, assistant.id)
+        file_id   = file.id
 
-    time.sleep(10)
-    retrieve_thread_run(thread.id, run.id)
+    if not assistant_id:
+        assistant    = create_assistant(instructions, file_id)
+        assistant_id = assistant.id
+
+    thread = create_thread(query, file_id)
+    thread_id = thread.id
+
+    create_and_poll_thread_run(thread_id, assistant_id)
 
     answer = get_thread_assistant_answer(thread.id)
     return create_json_data(answer)
@@ -54,6 +56,27 @@ def create_assistant(instructions="", file_id=""):
         tool_resources=tool_resources
     )
     return assistant
+
+
+def create_and_poll_thread_run(thread_id="", assistant_id=""):
+    run = client.beta.threads.runs.create_and_poll(
+        thread_id=thread_id,
+        assistant_id=assistant_id,
+    )
+    if run.status == 'completed': 
+        return run
+    else: 
+        return False
+    
+
+def add_thread_message(thread_id="", query=""):
+    if thread_id:
+        message = client.beta.threads.messages.create(
+            thread_id=thread_id,
+            role="user",
+            content=query
+        )
+    return message
 
 
 def create_thread(query="", file_id=""):
@@ -98,9 +121,25 @@ def get_thread_messages(thread_id=""):
     messages = client.beta.threads.messages.list(
         thread_id=thread_id,
     )
+
+    formatted_messages = []
     for message in reversed(messages.data):
-        print(message.role + ": " + message.content[0].text.value)
-    return messages.data
+        try:
+            if message.content[0].text.annotations[0].file_path.file_id:
+                file_id = message.content[0].text.annotations[0].file_path.file_id
+                file_extension = os.path.splitext(message.content[0].text.annotations[0].text)[1]
+                download_asistant_generated_file(file_id, file_extension)
+        except (AttributeError, IndexError):
+            pass
+
+        formatted_message = {
+            "data": {
+                "content": message.content[0].text.value
+            },
+            "type": message.role
+        }
+        formatted_messages.append(formatted_message)
+    return formatted_messages
 
 
 def get_thread_assistant_answer(thread_id=""):
@@ -109,7 +148,7 @@ def get_thread_assistant_answer(thread_id=""):
     )
     for message in messages.data:
         if message.role == "assistant":
-            if message.content[0].text.annotations[0].file_path.file_id:
+            if message.content[0].text.annotations and message.content[0].text.annotations[0].file_path.file_id:
                 file_id = message.content[0].text.annotations[0].file_path.file_id
                 file_extension = os.path.splitext(message.content[0].text.annotations[0].text)[1]
                 download_asistant_generated_file(file_id, file_extension)

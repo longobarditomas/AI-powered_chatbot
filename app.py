@@ -22,7 +22,8 @@ def ask():
 def assistant():
     query        = request.args.get('query', '')
     instructions = "Answer as if you were a co-worker."
-    #filepath     = "data/test.csv"
-    filepath     = ""
-    assistant_conversation = get_assistant_conversation(query, instructions, filepath)
+    filepath     = "data/test.csv"
+    #filepath     = ""
+    assistant_id = ""
+    assistant_conversation = get_assistant_conversation(query, assistant_id, instructions, filepath)
     return assistant_conversation
