@@ -25,5 +25,6 @@ def assistant():
     filepath     = "data/test.csv"
     #filepath     = ""
     assistant_id = ""
-    assistant_conversation = get_assistant_conversation(query, assistant_id, instructions, filepath)
+    thread_id    = ""
+    assistant_conversation = get_assistant_conversation(query, assistant_id, instructions, thread_id, filepath)
     return assistant_conversation

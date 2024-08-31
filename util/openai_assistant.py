@@ -7,7 +7,7 @@ from util.config import OPENAI_API_KEY, PERSIST_DIR
 client = OpenAI()
 
 
-def get_assistant_conversation(query="", assistant_id="", instructions="", filepath=""):
+def get_assistant_conversation(query="", assistant_id="", instructions="", thread_id ="", filepath=""):
     file_id = ""
     if filepath:
         file      = upload_assistant_file(filepath)
@@ -17,8 +17,11 @@ def get_assistant_conversation(query="", assistant_id="", instructions="", filep
         assistant    = create_assistant(instructions, file_id)
         assistant_id = assistant.id
 
-    thread = create_thread(query, file_id)
-    thread_id = thread.id
+    if thread_id:
+        add_thread_message(thread_id, query)
+    else:
+        thread = create_thread(query, file_id)
+        thread_id = thread.id
 
     create_and_poll_thread_run(thread_id, assistant_id)
 
