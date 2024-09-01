@@ -25,8 +25,8 @@ def get_assistant_conversation(query="", assistant_id="", instructions="", threa
 
     create_and_poll_thread_run(thread_id, assistant_id)
 
-    answer = get_thread_assistant_answer(thread.id)
-    return create_json_data(answer)
+    answer = get_thread_assistant_answer(thread_id)
+    return create_json_data(answer, assistant_id, thread_id)
 
 
 def upload_assistant_file(filepath=""):
@@ -167,9 +167,10 @@ def download_asistant_generated_file(file_id, file_extension):
         file.write(image_data_bytes)
 
 
-def create_json_data(answer=""):
+def create_json_data(answer="", assistant_id="", thread_id=""):
     data = {
-        "answer": answer,
+        "session_id" : assistant_id+"-"+thread_id,
+        "conversation" : answer,
     }
     json_data = json.dumps(data)
     return json_data
