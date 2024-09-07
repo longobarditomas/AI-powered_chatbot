@@ -23,19 +23,26 @@ def ask():
 def assistant():
     query        = request.args.get('query', '')
     instructions = "Answer as if you were a co-worker."
-    filepath     = "data/test.csv"
-    #filepath     = ""
+    #filepath     = "data/test.csv"
+    filepath     = ""
 
     session_id   = request.args.get('session_id', '')
-    assistant_id = ""
-    thread_id    = ""
+    session_data = get_session_data(session_id)
+
+    assistant_conversation = get_assistant_conversation(query, session_data["assistant_id"], instructions, session_data["thread_id"], filepath)
+    return assistant_conversation
+
+
+def get_session_data(session_id=""):
+    session_data = {
+        "assistant_id": "",
+        "thread_id": ""
+    }
     if session_id: 
         session_id = unquote(session_id)
         explode    = session_id.split('-') 
         if explode[0]:
-            assistant_id = explode[0]
+            session_data["assistant_id"] = explode[0]
         if explode[1]:
-            thread_id = explode[1]
-
-    assistant_conversation = get_assistant_conversation(query, assistant_id, instructions, thread_id, filepath)
-    return assistant_conversation
+            session_data["thread_id"] = explode[1]
+    return session_data
