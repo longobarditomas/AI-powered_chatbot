@@ -19,15 +19,23 @@ def ask():
     return answer
 
 
-@app.route("/assistant")
+@app.route("/assistant", methods=['POST'])
 def assistant():
-    query        = request.args.get('query', '')
+    query = request.form.get('query')
     instructions = "Answer as if you were a co-worker."
-    #filepath     = "data/test.csv"
-    filepath     = ""
+    #filepath     = "tmp/test.pdf"
+    #filepath     = ""
 
-    session_id   = request.args.get('session_id', '')
+    session_id = request.form.get('session_id')
     session_data = get_session_data(session_id)
+
+    filename = ""
+    if 'file' in request.files:
+        file = request.files['file']
+        if file:
+            store_file(file)
+            filename = file.filename
+            filepath = "tmp/"+filename
 
     assistant_conversation = get_assistant_conversation(query, session_data["assistant_id"], instructions, session_data["thread_id"], filepath)
     return assistant_conversation
@@ -46,3 +54,11 @@ def get_session_data(session_id=""):
         if explode[1]:
             session_data["thread_id"] = explode[1]
     return session_data
+
+
+def store_file(file):
+    UPLOAD_FOLDER = 'tmp'
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER)
+        os.chmod(UPLOAD_FOLDER, 0o774)
+    file.save(os.path.join(UPLOAD_FOLDER, file.filename))
