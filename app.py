@@ -3,6 +3,10 @@ from flask import Flask, request
 from datetime import datetime
 from urllib.parse import unquote
 
+from flask_cors import CORS
+app = Flask(__name__)
+CORS(app)
+
 from util.langchain_conversation import chat_open_ai_conversation
 from util.openai_assistant import get_assistant_conversation
 from util.elasticserach import db_search
@@ -22,14 +26,12 @@ def ask():
 @app.route("/assistant", methods=['POST'])
 def assistant():
     query = request.form.get('query')
-    instructions = "Answer as if you were a co-worker."
-    #filepath     = "tmp/test.pdf"
-    #filepath     = ""
+    instructions = request.form.get('instructions') or "Answer as if you were a co-worker."
 
     session_id = request.form.get('session_id')
     session_data = get_session_data(session_id)
 
-    filename = ""
+    filepath = ""
     if 'file' in request.files:
         file = request.files['file']
         if file:
