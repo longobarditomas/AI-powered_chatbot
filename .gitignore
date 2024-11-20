@@ -89,6 +89,9 @@ celerybeat-schedule
 .env
 .env.*
 
+# Explicitly not ignore .env.example
+!.env.example
+
 # virtualenv
 .venv
 venv/

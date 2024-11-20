@@ -1,6 +1,6 @@
 import os
 
-from util.config import ELASTICSEARCH_URL, ELASTICSEARCH_INDEX_NAME
+from util.config import ELASTICSEARCH_URL, ELASTICSEARCH_INDEX_NAME, DOCS_FILE
 from elasticsearch import Elasticsearch
 from langchain_elasticsearch import ElasticsearchStore
 from langchain_openai import OpenAIEmbeddings
@@ -8,9 +8,9 @@ from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import CharacterTextSplitter
 
 # Constants
-ES_URL        = ELASTICSEARCH_URL
-INDEX_NAME    = ELASTICSEARCH_INDEX_NAME
-DOCS_FILENAME = "state_of_the_union.txt"
+ES_URL     = ELASTICSEARCH_URL
+INDEX_NAME = ELASTICSEARCH_INDEX_NAME
+DOCS_FILE  = DOCS_FILE
 
 # Global Elasticsearch client
 es_client = Elasticsearch(ES_URL)
@@ -19,7 +19,7 @@ def setup_index():
     if not es_client.indices.exists(index=INDEX_NAME):
         current_dir  = os.path.dirname(os.path.abspath(__file__))
         base_dir     = os.path.dirname(current_dir)
-        filename     = DOCS_FILENAME
+        filename     = DOCS_FILE
         filepath     = os.path.join( base_dir+'/data', filename)
 
         loader        = TextLoader(filepath)
