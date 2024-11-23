@@ -12,15 +12,19 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.messages import HumanMessage
 from langchain_core.messages import AIMessage
 
+OPENAI_MODELS = ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-0314", "gpt-4-0613", "gpt-4-32k", "gpt-4-turbo", "code-davinci-002", "code-cushman-001", "text-embedding-ada-002", "davinci", "curie", "babbage", "ada", "whisper-1", "dalle-2"]
 
-def chat_open_ai_conversation(query='', conversationID=0, doc=''):
+def chat_open_ai_conversation(query='', conversationID=0, doc='', model=''):
     if conversationID and exists_session(conversationID):
         loaded_messages = read_session(conversationID, "sessions")
     else:
         loaded_messages = []
-    return get_chat_open_ai_answer(query, conversationID, doc, loaded_messages)
+    return get_chat_open_ai_answer(query, conversationID, doc, loaded_messages, model)
 
-def get_chat_open_ai_answer(question='', conversationID=0, doc='', store={}):
+def get_chat_open_ai_answer(question='', conversationID=0, doc='', store={}, model="gpt-4o"):
+    if not model in OPENAI_MODELS:
+        model="gpt-4o"
+
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", "You are a friendly and polite assistant. Always respond in a kind and respectful manner."),
@@ -29,7 +33,7 @@ def get_chat_open_ai_answer(question='', conversationID=0, doc='', store={}):
         ]
     )
 
-    chain = prompt | ChatOpenAI(model="gpt-4o")
+    chain = prompt | ChatOpenAI(model=model)
     
     session_history = read_session(conversationID, "sessions")
 

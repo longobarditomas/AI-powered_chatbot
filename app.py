@@ -17,9 +17,10 @@ app = Flask(__name__)
 def ask():
     query = request.args.get('query', '')
     docs  = db_search(query)
+    model = ''
     
     conversationID = request.args.get('conversationID', datetime.now().strftime("%Y%m%d%H%M%S"))
-    answer = chat_open_ai_conversation(query, conversationID, docs)
+    answer = chat_open_ai_conversation(query, conversationID, docs, model)
     return answer
 
 
