@@ -25,9 +25,14 @@ def get_chat_open_ai_answer(question='', conversationID=0, doc='', store={}, mod
     if not model in OPENAI_MODELS:
         model="gpt-4o"
 
+    system_message_content = "You are a friendly and polite assistant. Always respond in a kind and respectful manner."
+    if doc:
+        system_message_content += f"\n\nHere is some relevant information that might help you answer the user's question:\n```\n{doc}\n```\n"
+
+
     prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", "You are a friendly and polite assistant. Always respond in a kind and respectful manner."),
+            ("system", system_message_content),
             ("placeholder", "{chat_history}"),
             ("human", "{input}"),
         ]
