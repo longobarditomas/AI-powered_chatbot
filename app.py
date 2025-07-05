@@ -3,9 +3,10 @@ from flask import Flask, request
 from datetime import datetime
 from urllib.parse import unquote
 
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 app = Flask(__name__)
-CORS(app)
+#cors = CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, resources={r"/assistant": {"origins": "http://localhost:3000"}})
 
 from util.langchain_conversation import chat_open_ai_conversation
 from util.openai_assistant import get_assistant_conversation
@@ -18,13 +19,15 @@ def ask():
     query = request.args.get('query', '')
     docs  = db_search(query)
     model = ''
+    print(docs)
     
     conversationID = request.args.get('conversationID', datetime.now().strftime("%Y%m%d%H%M%S"))
     answer = chat_open_ai_conversation(query, conversationID, docs, model)
+    print(answer)
     return answer
 
-
 @app.route("/assistant", methods=['POST'])
+@cross_origin()
 def assistant():
     query = request.form.get('query')
     instructions = request.form.get('instructions') or "Answer as if you were a co-worker."

@@ -1,19 +1,25 @@
 import os
 
-from util.config import ELASTICSEARCH_URL, ELASTICSEARCH_INDEX_NAME, DOCS_FILE
+from util.config import ELASTICSEARCH_URL, ELASTICSEARCH_INDEX_NAME, ELASTICSEARCH_DOCS_FILE, ELASTIC_CLOUD_API_KEY, ELASTIC_CLOUD_INDEX_NAME, ELASTIC_CLOUD_DOCS_FILE
 from elasticsearch import Elasticsearch
 from langchain_elasticsearch import ElasticsearchStore
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import CharacterTextSplitter
 
+from helpers.es_helpers import get_es_client, get_elasticsearch_store, create_elasticsearch_store_from_documents
+
 # Constants
 ES_URL     = ELASTICSEARCH_URL
-INDEX_NAME = ELASTICSEARCH_INDEX_NAME
-DOCS_FILE  = DOCS_FILE
+if ELASTIC_CLOUD_API_KEY: 
+    INDEX_NAME = ELASTIC_CLOUD_INDEX_NAME
+    DOCS_FILE  = ELASTIC_CLOUD_DOCS_FILE
+else:
+    INDEX_NAME = ELASTICSEARCH_INDEX_NAME
+    DOCS_FILE  = ELASTICSEARCH_DOCS_FILE
 
 # Global Elasticsearch client
-es_client = Elasticsearch(ES_URL)
+es_client = get_es_client()
 
 def setup_index():
     if not es_client.indices.exists(index=INDEX_NAME):
@@ -28,12 +34,7 @@ def setup_index():
         docs          = text_splitter.split_documents(documents)
         embeddings    = OpenAIEmbeddings()
 
-        db = ElasticsearchStore.from_documents(
-            docs,
-            embeddings,
-            es_url=ES_URL,
-            index_name=INDEX_NAME,
-        )
+        db = create_elasticsearch_store_from_documents(docs, embeddings)
         es_client.indices.refresh(index=INDEX_NAME)
         print("Index created!!!")
     else:
@@ -45,11 +46,7 @@ def query_index(query, top_n=2):
         raise Exception("Index does not exist. Please set up the index first.")
     
     embeddings = OpenAIEmbeddings()
-    db = ElasticsearchStore(
-        es_url=ES_URL,
-        index_name=INDEX_NAME,
-        embedding=embeddings,
-    )
+    db = get_elasticsearch_store(embeddings)
     results = db.similarity_search(query)
     concatenated_content = ""
     for result in results[:top_n]:
@@ -62,11 +59,7 @@ def delete_index():
         raise Exception("Index does not exist. Please set up the index first.")
     
     embeddings = OpenAIEmbeddings()
-    db = ElasticsearchStore(
-        es_url=ES_URL,
-        index_name=INDEX_NAME,
-        embedding=embeddings,
-    )
+    db = get_elasticsearch_store(embeddings)
     db.client.indices.delete(
         index=INDEX_NAME,
         ignore_unavailable=True,
